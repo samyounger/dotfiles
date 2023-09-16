@@ -1,0 +1,12 @@
+tap "homebrew/cask-drivers"
+tap "homebrew/cask-fonts"
+tap "homebrew/cask-versions"
+
+# Install required software applications
+cask dropbox
+cask spotify
+cask google-chrome
+cask firefox
+cask visual-studio-code
+cask slack
+cask iterm

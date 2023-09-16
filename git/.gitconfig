@@ -1,0 +1,19 @@
+[user]
+	name = Sam Younger
+	email = syounger@usertesting.com
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINjAEhhckZ7le2QAzbbXQX/HeYT2jGzQHMs/fF7ZD7kf
+[gpg]
+  format = ssh
+[gpg "ssh"]
+  program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+[commit]
+  gpgsign = true
+[core]
+	excludesfile = /Users/syounger/.gitignore_global
+[alias]
+	goodmorning = !zsh -c \"source ~/.zshrc"
+[pull]
+  rebase = false
+# Enforce SSH
+[url "ssh://git@github.com/"]
+	insteadOf = https://github.com/

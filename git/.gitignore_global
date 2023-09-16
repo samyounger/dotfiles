@@ -1,0 +1,11 @@
+.DS_Store
+$HOME/public/uploads/
+node_modules/
+bower_components/
+.sass-cache/
+
+# ASDF
+.tool-versions
+
+# IntelliJ
+.idea/
