@@ -1,0 +1,13 @@
+# Required by brew
+PATH="/usr/local/sbin:$PATH"
+
+# Required for Coursier
+PATH="$PATH:$COURSIER_PATH"
+
+# Setup Go
+PATH=$PATH:$GOPATH/bin
+
+# Setup Python
+PATH="$PATH:$PYTHON_PATH"
+
+export PATH

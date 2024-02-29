@@ -77,6 +77,7 @@ plugins=(git asdf)
 zstyle  identities id_rsa
 
 source $ZSH/oh-my-zsh.sh
+source "$HOME/.config/op/plugins.sh"
 
 # User configuration
 
