@@ -70,7 +70,7 @@ ZSH_THEME="robbyrussell"
 # Add wisely, as too many plugins slow down shell startup.
 # plugins=(git asdf)
 # plugins=(git ssh-agent asdf)
-plugins=(git asdf)
+plugins=(git asdf 1password)
 
 # Load SSH identities
 # Instructions https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/ssh-agent
@@ -94,6 +94,8 @@ source "$HOME/.config/op/plugins.sh"
 gbco() {
   git checkout $(git branch | grep $1)
 }
+
+alias dev="cd $HOME/development"
 
 #####################################################################################
 # KEYS
