@@ -11,6 +11,7 @@ import (
 // Dependency injection for testability
 var installGitFunc = dependencies.InstallGit
 var installAsdfFunc = dependencies.InstallAsdf
+var installGithubCLIFunc = dependencies.InstallGithubCLI
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
 
@@ -28,7 +29,8 @@ const text = `
 Options:
 1) Install git
 2) Install asdf
-3) Exit
+3) Install GitHub CLI
+4) Exit
 $ `
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
 	case "2":
 		installAsdfFunc()
 	case "3":
+		installGithubCLIFunc()
+	case "4":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return
 	default:

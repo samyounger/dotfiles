@@ -48,7 +48,8 @@ func TestMain_InstallAsdf(t *testing.T) {
 func TestMain_Exit(t *testing.T) {
 	installGitFunc = func() { t.Errorf("Should not call installGitFunc") }
 	installAsdfFunc = func() { t.Errorf("Should not call installAsdfFunc") }
-	inputReader = strings.NewReader("3\n")
+	installGithubCLIFunc = func() { t.Errorf("Should not call installGithubCLIFunc") }
+	inputReader = strings.NewReader("4\n")
 	var buf bytes.Buffer
 	outputWriter = &buf
 
@@ -72,4 +73,3 @@ func TestMain_Default(t *testing.T) {
 		t.Errorf("Expected default handler to print input")
 	}
 }
-
