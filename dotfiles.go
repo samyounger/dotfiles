@@ -3,16 +3,23 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"github.com/syounger-ut/dotfiles/install/dependencies"
 )
 
+// Dependency injection for testability
+var installGitFunc = dependencies.InstallGit
+var installAsdfFunc = dependencies.InstallAsdf
+var inputReader io.Reader = os.Stdin
+var outputWriter io.Writer = os.Stdout
+
 func printText(text string) {
-	fmt.Print(text)
+	fmt.Fprint(outputWriter, text)
 }
 
 func waitForInput() string {
-	input := bufio.NewScanner(os.Stdin)
+	input := bufio.NewScanner(inputReader)
 	input.Scan()
 	return input.Text()
 }
@@ -29,11 +36,11 @@ func main() {
 	result := waitForInput()
 	switch result {
 	case "1":
-		dependencies.InstallGit()
+		installGitFunc()
 	case "2":
-		dependencies.InstallAsdf()
+		installAsdfFunc()
 	case "3":
-		fmt.Println("Exiting.")
+		fmt.Fprintln(outputWriter, "Exiting.")
 		return
 	default:
 		printText("Selected: " + result + "\n")
