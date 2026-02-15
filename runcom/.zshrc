@@ -117,7 +117,7 @@ export EDITOR='vim'
 ## ALIASES
 #########################################################################################
 
-alias dev="cd ~/development"
+source "$HOME/.dotfiles/system/.alias"
 
 # Pi Hole
 pi() {
