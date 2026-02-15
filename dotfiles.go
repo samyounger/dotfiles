@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"github.com/syounger-ut/dotfiles/install/dependencies"
 	"github.com/syounger-ut/dotfiles/install"
 )
 
 // Dependency injection for testability
-var installGitFunc = dependencies.InstallGit
-var installAsdfFunc = dependencies.InstallAsdf
-var installGithubCLIFunc = dependencies.InstallGithubCLI
-var setupFunc = install.Setup
+var setupFunc = install.Dependencies
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
 
@@ -29,10 +25,7 @@ func waitForInput() string {
 
 const text = `
 Options:
-1) Install git
-2) Install asdf
-3) Install GitHub CLI
-4) Setup (Homebrew & zsh)
+1) Setup (dependencies)
 5) Exit
 $ `
 
@@ -41,12 +34,6 @@ func main() {
 	result := waitForInput()
 	switch result {
 	case "1":
-		installGitFunc()
-	case "2":
-		installAsdfFunc()
-	case "3":
-		installGithubCLIFunc()
-	case "4":
 		setupFunc()
 	case "5":
 		fmt.Fprintln(outputWriter, "Exiting.")
