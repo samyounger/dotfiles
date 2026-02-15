@@ -3,13 +3,13 @@ package install
 import (
 	"bufio"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"github.com/syounger-ut/dotfiles/install/dependencies"
 )
 
-// Setup interactively installs Homebrew, zsh, git, GitHub CLI, and asdf
-func Dependencies() {
+// Dependencies interactively installs Homebrew, zsh, git, GitHub CLI, and asdf
+func Dependencies(input io.Reader, output io.Writer) {
 	options := []struct {
 		name string
 		action func()
@@ -21,26 +21,26 @@ func Dependencies() {
 		{"asdf", dependencies.InstallAsdf},
 	}
 
-	fmt.Println("Select which dependencies to install:")
-	fmt.Println("0) All")
+	fmt.Fprintln(output, "Select which dependencies to install:")
+	fmt.Fprintln(output, "0) All")
 	for i, opt := range options {
-		fmt.Printf("%d) %s\n", i+1, opt.name)
+		fmt.Fprintf(output, "%d) %s\n", i+1, opt.name)
 	}
-	fmt.Print("Enter your choice (comma-separated for multiple, e.g. 1,3): ")
+	fmt.Fprint(output, "Enter your choice (comma-separated for multiple, e.g. 1,3): ")
 
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := bufio.NewScanner(input)
 	scanner.Scan()
-	input := scanner.Text()
-	input = strings.TrimSpace(input)
+	userInput := scanner.Text()
+	userInput = strings.TrimSpace(userInput)
 
-	if input == "0" {
+	if userInput == "0" {
 		for _, opt := range options {
 			opt.action()
 		}
 		return
 	}
 
-	choices := strings.Split(input, ",")
+	choices := strings.Split(userInput, ",")
 	chosen := map[int]bool{}
 	for _, c := range choices {
 		c = strings.TrimSpace(c)
@@ -49,7 +49,7 @@ func Dependencies() {
 		}
 		idx, err := parseChoice(c, len(options))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid choice: %s\n", c)
+			fmt.Fprintf(output, "Invalid choice: %s\n", c)
 			continue
 		}
 		chosen[idx] = true

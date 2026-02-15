@@ -34,7 +34,7 @@ func main() {
 	result := waitForInput()
 	switch result {
 	case "1":
-		setupFunc()
+		setupFunc(inputReader, outputWriter)
 	case "5":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return
