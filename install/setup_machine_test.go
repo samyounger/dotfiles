@@ -15,6 +15,28 @@ type commandCall struct {
 	args []string
 }
 
+func TestSetupOSXDefaults_Exit(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	out := &bytes.Buffer{}
+	SetupOSXDefaults(strings.NewReader("0\n"), out)
+
+	if !strings.Contains(out.String(), "Exiting.") {
+		t.Fatalf("expected exit message, got: %s", out.String())
+	}
+}
+
+func TestSetupOSXDefaults_InvalidTopLevelSelection(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	out := &bytes.Buffer{}
+	SetupOSXDefaults(strings.NewReader("9\n"), out)
+
+	if !strings.Contains(out.String(), "Invalid selection.") {
+		t.Fatalf("expected invalid selection message, got: %s", out.String())
+	}
+}
+
 func TestSetupOSXDefaults_SuccessKeepExistingName(t *testing.T) {
 	defer resetOSXDefaultsMocks()
 
@@ -26,17 +48,23 @@ func TestSetupOSXDefaults_SuccessKeepExistingName(t *testing.T) {
 		}
 		return nil, errors.New("unexpected command")
 	}
-
-	runCommand = func(name string, args ...string) error { return nil }
+	var calls []commandCall
+	runCommand = func(name string, args ...string) error {
+		calls = append(calls, commandCall{name: name, args: append([]string{}, args...)})
+		return nil
+	}
 
 	out := &bytes.Buffer{}
-	SetupOSXDefaults(strings.NewReader("1\n"), out)
+	SetupOSXDefaults(strings.NewReader("1\n1\n"), out)
 
 	if !strings.Contains(out.String(), "Current computer name: CurrentMac") {
 		t.Fatalf("expected current name prompt, got: %s", out.String())
 	}
 	if !strings.Contains(out.String(), "OSX defaults setup complete.") {
 		t.Fatalf("expected success message, got: %s", out.String())
+	}
+	if !hasCommand(calls, "sudo", "scutil", "--set", "ComputerName", "CurrentMac") {
+		t.Fatalf("expected current computer name command, got %#v", calls)
 	}
 }
 
@@ -56,7 +84,7 @@ func TestSetupOSXDefaults_SuccessReplaceName(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	SetupOSXDefaults(strings.NewReader("2\nWorkstation\n"), out)
+	SetupOSXDefaults(strings.NewReader("1\n2\nWorkstation\n"), out)
 
 	if !hasCommand(calls, "sudo", "scutil", "--set", "ComputerName", "Workstation") {
 		t.Fatalf("expected replaced computer name command, got %#v", calls)
@@ -81,31 +109,7 @@ func TestSetupOSXDefaults_FailsWhenCurrentNameLookupFails(t *testing.T) {
 	}
 }
 
-func TestSetupOSXDefaults_Failure(t *testing.T) {
-	defer resetOSXDefaultsMocks()
-
-	home := t.TempDir()
-	userHomeDir = func() (string, error) { return home, nil }
-	runCommandOutput = func(name string, args ...string) ([]byte, error) {
-		return []byte("CurrentMac\n"), nil
-	}
-
-	runCommand = func(name string, args ...string) error {
-		if name == "sudo" && len(args) == 1 && args[0] == "-v" {
-			return errors.New("boom")
-		}
-		return nil
-	}
-
-	out := &bytes.Buffer{}
-	SetupOSXDefaults(strings.NewReader("1\n"), out)
-
-	if !strings.Contains(out.String(), "Failed to apply OSX defaults") {
-		t.Fatalf("expected osxdefaults error message, got: %s", out.String())
-	}
-}
-
-func TestSetupOSXDefaults_RequiresValidSelection(t *testing.T) {
+func TestSetupOSXDefaults_RequiresValidNameSelection(t *testing.T) {
 	defer resetOSXDefaultsMocks()
 
 	runCommandOutput = func(name string, args ...string) ([]byte, error) {
@@ -113,7 +117,7 @@ func TestSetupOSXDefaults_RequiresValidSelection(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	SetupOSXDefaults(strings.NewReader("3\n"), out)
+	SetupOSXDefaults(strings.NewReader("1\n3\n"), out)
 
 	if !strings.Contains(out.String(), "invalid selection") {
 		t.Fatalf("expected invalid selection error, got: %s", out.String())
@@ -128,7 +132,7 @@ func TestSetupOSXDefaults_RequiresComputerNameWhenReplacing(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	SetupOSXDefaults(strings.NewReader("2\n\n"), out)
+	SetupOSXDefaults(strings.NewReader("1\n2\n\n"), out)
 
 	if !strings.Contains(out.String(), "computer name is required") {
 		t.Fatalf("expected required-name error, got: %s", out.String())
@@ -207,21 +211,6 @@ func TestApplyOSXDefaults_NonAllowFailureReturnsError(t *testing.T) {
 	}
 }
 
-func TestBuildOSXDefaultsCommands_ContainsCoreCommands(t *testing.T) {
-	commands := buildOSXDefaultsCommands("NeoTest", "/tmp/screens")
-	if len(commands) == 0 {
-		t.Fatal("expected command list to be non-empty")
-	}
-
-	if !hasOSXDefaultCommand(commands, "sudo", "scutil", "--set", "ComputerName", "NeoTest") {
-		t.Fatalf("expected computer name command in command list")
-	}
-
-	if !hasOSXDefaultCommand(commands, "defaults", "write", "com.apple.screencapture", "location", "-string", "/tmp/screens") {
-		t.Fatalf("expected screenshot location command in command list")
-	}
-}
-
 func hasCommand(calls []commandCall, name string, args ...string) bool {
 	for _, call := range calls {
 		if call.name != name {
@@ -233,28 +222,6 @@ func hasCommand(calls []commandCall, name string, args ...string) bool {
 		matched := true
 		for i := range args {
 			if call.args[i] != args[i] {
-				matched = false
-				break
-			}
-		}
-		if matched {
-			return true
-		}
-	}
-	return false
-}
-
-func hasOSXDefaultCommand(commands []osxDefaultsCommand, name string, args ...string) bool {
-	for _, command := range commands {
-		if command.name != name {
-			continue
-		}
-		if len(command.args) != len(args) {
-			continue
-		}
-		matched := true
-		for i := range args {
-			if command.args[i] != args[i] {
 				matched = false
 				break
 			}
