@@ -18,9 +18,10 @@ var runCommandOutput = func(name string, args ...string) ([]byte, error) {
 	return cmd.Output()
 }
 
-func SetupOSXDefaults(input io.Reader, output io.Writer) {
-	fmt.Fprintln(output, "OSX Defaults Options:")
+func SetupMachine(input io.Reader, output io.Writer) {
+	fmt.Fprintln(output, "Machine Setup Options:")
 	fmt.Fprintln(output, "1) Setup MacOS settings")
+	fmt.Fprintln(output, "2) Setup chrome")
 	fmt.Fprintln(output, "0) Exit")
 	fmt.Fprint(output, "$ ")
 
@@ -32,10 +33,16 @@ func SetupOSXDefaults(input io.Reader, output io.Writer) {
 
 	switch strings.TrimSpace(scanner.Text()) {
 	case "1":
-		if !runOSXDefaults(scanner, output) {
+		if !runMacOSDefaults(scanner, output) {
 			return
 		}
-		fmt.Fprintln(output, "OSX defaults setup complete.")
+		fmt.Fprintln(output, "MacOS settings setup complete.")
+	case "2":
+		if err := applyChromeDefaults(); err != nil {
+			fmt.Fprintf(output, "Failed to apply Chrome defaults: %v\n", err)
+			return
+		}
+		fmt.Fprintln(output, "Chrome defaults setup complete.")
 	case "0":
 		fmt.Fprintln(output, "Exiting.")
 	default:
@@ -43,21 +50,21 @@ func SetupOSXDefaults(input io.Reader, output io.Writer) {
 	}
 }
 
-func runOSXDefaults(scanner *bufio.Scanner, output io.Writer) bool {
+func runMacOSDefaults(scanner *bufio.Scanner, output io.Writer) bool {
 	currentComputerName, err := currentComputerName()
 	if err != nil {
-		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
+		fmt.Fprintf(output, "Failed to apply MacOS settings: %v\n", err)
 		return false
 	}
 
 	computerName, err := promptComputerName(scanner, output, currentComputerName)
 	if err != nil {
-		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
+		fmt.Fprintf(output, "Failed to apply MacOS settings: %v\n", err)
 		return false
 	}
 
-	if err := applyOSXDefaults(output, computerName); err != nil {
-		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
+	if err := applyMacOSDefaults(output, computerName); err != nil {
+		fmt.Fprintf(output, "Failed to apply MacOS settings: %v\n", err)
 		return false
 	}
 	return true
@@ -103,7 +110,7 @@ func promptComputerName(scanner *bufio.Scanner, output io.Writer, currentName st
 	}
 }
 
-func applyOSXDefaults(output io.Writer, computerName string) error {
+func applyMacOSDefaults(output io.Writer, computerName string) error {
 	home, err := userHomeDir()
 	if err != nil {
 		return err
@@ -114,7 +121,7 @@ func applyOSXDefaults(output io.Writer, computerName string) error {
 		return fmt.Errorf("create screenshots folder: %w", err)
 	}
 
-	commands := application_settings.BuildMacOSDefaultsCommands(computerName, screenshotFolder)
+	commands := application_settings.BuildMacOSSettingsCommands(computerName, screenshotFolder)
 	for _, command := range commands {
 		if err := runCommand(command.Name, command.Args...); err != nil {
 			if command.AllowFailure {
@@ -131,5 +138,15 @@ func applyOSXDefaults(output io.Writer, computerName string) error {
 		}
 	}
 
+	return nil
+}
+
+func applyChromeDefaults() error {
+	commands := application_settings.BuildChromeDefaultsCommands()
+	for _, command := range commands {
+		if err := runCommand(command.Name, command.Args...); err != nil {
+			return fmt.Errorf("%s %s: %w", command.Name, strings.Join(command.Args, " "), err)
+		}
+	}
 	return nil
 }

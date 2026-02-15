@@ -7,14 +7,14 @@ const (
 
 var languagePrefs = []string{"en", "GB"}
 
-type MacOSDefaultsCommand struct {
+type SettingsCommand struct {
 	Name         string
 	Args         []string
 	AllowFailure bool
 }
 
-func BuildMacOSDefaultsCommands(computerName, screenshotFolder string) []MacOSDefaultsCommand {
-	commands := []MacOSDefaultsCommand{
+func BuildMacOSSettingsCommands(computerName, screenshotFolder string) []SettingsCommand {
+	commands := []SettingsCommand{
 		// Close System Settings before changing preferences.
 		{Name: "osascript", Args: []string{"-e", "tell application \"System Preferences\" to quit"}, AllowFailure: true},
 		// Prompt once for sudo so elevated commands can run.

@@ -12,7 +12,7 @@ import (
 // Dependency injection for testability
 var setupFunc = install.Dependencies
 var installFunc = install.InstallDotfiles
-var setupOSXDefaultsFunc = install.SetupOSXDefaults
+var setupMachineFunc = install.SetupMachine
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
 
@@ -43,7 +43,7 @@ func main() {
 	case "2":
 		installFunc(outputWriter)
 	case "3":
-		setupOSXDefaultsFunc(inputReader, outputWriter)
+		setupMachineFunc(inputReader, outputWriter)
 	case "0":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return

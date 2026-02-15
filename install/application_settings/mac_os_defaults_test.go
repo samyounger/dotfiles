@@ -2,8 +2,8 @@ package application_settings
 
 import "testing"
 
-func TestBuildMacOSDefaultsCommands_ContainsCoreCommands(t *testing.T) {
-	commands := BuildMacOSDefaultsCommands("NeoTest", "/tmp/screens")
+func TestBuildMacOSSettingsCommands_ContainsCoreCommands(t *testing.T) {
+	commands := BuildMacOSSettingsCommands("NeoTest", "/tmp/screens")
 	if len(commands) == 0 {
 		t.Fatal("expected command list to be non-empty")
 	}
@@ -17,8 +17,8 @@ func TestBuildMacOSDefaultsCommands_ContainsCoreCommands(t *testing.T) {
 	}
 }
 
-func TestBuildMacOSDefaultsCommands_AllowFailureMarkers(t *testing.T) {
-	commands := BuildMacOSDefaultsCommands("NeoTest", "/tmp/screens")
+func TestBuildMacOSSettingsCommands_AllowFailureMarkers(t *testing.T) {
+	commands := BuildMacOSSettingsCommands("NeoTest", "/tmp/screens")
 
 	if !hasMacOSDefaultCommandAllowFailure(commands, "osascript", []string{"-e", "tell application \"System Preferences\" to quit"}) {
 		t.Fatalf("expected osascript command to be allow-failure")
@@ -29,7 +29,7 @@ func TestBuildMacOSDefaultsCommands_AllowFailureMarkers(t *testing.T) {
 	}
 }
 
-func hasMacOSDefaultCommand(commands []MacOSDefaultsCommand, name string, args ...string) bool {
+func hasMacOSDefaultCommand(commands []SettingsCommand, name string, args ...string) bool {
 	for _, command := range commands {
 		if command.Name != name {
 			continue
@@ -51,7 +51,7 @@ func hasMacOSDefaultCommand(commands []MacOSDefaultsCommand, name string, args .
 	return false
 }
 
-func hasMacOSDefaultCommandAllowFailure(commands []MacOSDefaultsCommand, name string, args []string) bool {
+func hasMacOSDefaultCommandAllowFailure(commands []SettingsCommand, name string, args []string) bool {
 	for _, command := range commands {
 		if command.Name != name {
 			continue
