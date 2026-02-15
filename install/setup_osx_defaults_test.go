@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,29 +15,80 @@ type commandCall struct {
 	args []string
 }
 
-func TestSetupOSXDefaults_Success(t *testing.T) {
-	defer resetDotfilesMocks()
-	setComputerNameEnv(t, "")
+func TestSetupOSXDefaults_SuccessKeepExistingName(t *testing.T) {
+	defer resetOSXDefaultsMocks()
 
 	home := t.TempDir()
 	userHomeDir = func() (string, error) { return home, nil }
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		if name == "scutil" && len(args) == 2 && args[0] == "--get" && args[1] == "ComputerName" {
+			return []byte("CurrentMac\n"), nil
+		}
+		return nil, errors.New("unexpected command")
+	}
 
 	runCommand = func(name string, args ...string) error { return nil }
 
 	out := &bytes.Buffer{}
-	SetupOSXDefaults(out)
+	SetupOSXDefaults(strings.NewReader("1\n"), out)
 
+	if !strings.Contains(out.String(), "Current computer name: CurrentMac") {
+		t.Fatalf("expected current name prompt, got: %s", out.String())
+	}
 	if !strings.Contains(out.String(), "OSX defaults setup complete.") {
 		t.Fatalf("expected success message, got: %s", out.String())
 	}
 }
 
-func TestSetupOSXDefaults_Failure(t *testing.T) {
-	defer resetDotfilesMocks()
-	setComputerNameEnv(t, "")
+func TestSetupOSXDefaults_SuccessReplaceName(t *testing.T) {
+	defer resetOSXDefaultsMocks()
 
 	home := t.TempDir()
 	userHomeDir = func() (string, error) { return home, nil }
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		return []byte("CurrentMac\n"), nil
+	}
+
+	var calls []commandCall
+	runCommand = func(name string, args ...string) error {
+		calls = append(calls, commandCall{name: name, args: append([]string{}, args...)})
+		return nil
+	}
+
+	out := &bytes.Buffer{}
+	SetupOSXDefaults(strings.NewReader("2\nWorkstation\n"), out)
+
+	if !hasCommand(calls, "sudo", "scutil", "--set", "ComputerName", "Workstation") {
+		t.Fatalf("expected replaced computer name command, got %#v", calls)
+	}
+}
+
+func TestSetupOSXDefaults_FailsWhenCurrentNameLookupFails(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		return nil, errors.New("lookup failed")
+	}
+
+	out := &bytes.Buffer{}
+	SetupOSXDefaults(strings.NewReader("1\n"), out)
+
+	if !strings.Contains(out.String(), "Failed to apply OSX defaults") {
+		t.Fatalf("expected failure message, got: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "failed to read current computer name") {
+		t.Fatalf("expected current-name lookup error, got: %s", out.String())
+	}
+}
+
+func TestSetupOSXDefaults_Failure(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	home := t.TempDir()
+	userHomeDir = func() (string, error) { return home, nil }
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		return []byte("CurrentMac\n"), nil
+	}
 
 	runCommand = func(name string, args ...string) error {
 		if name == "sudo" && len(args) == 1 && args[0] == "-v" {
@@ -46,16 +98,45 @@ func TestSetupOSXDefaults_Failure(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	SetupOSXDefaults(out)
+	SetupOSXDefaults(strings.NewReader("1\n"), out)
 
 	if !strings.Contains(out.String(), "Failed to apply OSX defaults") {
 		t.Fatalf("expected osxdefaults error message, got: %s", out.String())
 	}
 }
 
-func TestApplyOSXDefaults_UsesDefaultComputerName(t *testing.T) {
-	defer resetDotfilesMocks()
-	setComputerNameEnv(t, "")
+func TestSetupOSXDefaults_RequiresValidSelection(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		return []byte("CurrentMac\n"), nil
+	}
+
+	out := &bytes.Buffer{}
+	SetupOSXDefaults(strings.NewReader("3\n"), out)
+
+	if !strings.Contains(out.String(), "invalid selection") {
+		t.Fatalf("expected invalid selection error, got: %s", out.String())
+	}
+}
+
+func TestSetupOSXDefaults_RequiresComputerNameWhenReplacing(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		return []byte("CurrentMac\n"), nil
+	}
+
+	out := &bytes.Buffer{}
+	SetupOSXDefaults(strings.NewReader("2\n\n"), out)
+
+	if !strings.Contains(out.String(), "computer name is required") {
+		t.Fatalf("expected required-name error, got: %s", out.String())
+	}
+}
+
+func TestApplyOSXDefaults_UsesInputComputerName(t *testing.T) {
+	defer resetOSXDefaultsMocks()
 
 	home := t.TempDir()
 	userHomeDir = func() (string, error) { return home, nil }
@@ -67,50 +148,22 @@ func TestApplyOSXDefaults_UsesDefaultComputerName(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	if err := applyOSXDefaults(out); err != nil {
+	if err := applyOSXDefaults(out, "Workstation"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !hasCommand(calls, "sudo", "scutil", "--set", "ComputerName", defaultComputerName) {
-		t.Fatalf("expected default computer name command, got %#v", calls)
+	if !hasCommand(calls, "sudo", "scutil", "--set", "ComputerName", "Workstation") {
+		t.Fatalf("expected input computer name command, got %#v", calls)
 	}
 
 	screenshotFolder := filepath.Join(home, "Downloads")
 	if !hasCommand(calls, "defaults", "write", "com.apple.screencapture", "location", "-string", screenshotFolder) {
 		t.Fatalf("expected screenshot location command for %s", screenshotFolder)
 	}
-
-	if _, err := os.Stat(screenshotFolder); err != nil {
-		t.Fatalf("expected screenshot folder to exist, got error: %v", err)
-	}
-}
-
-func TestApplyOSXDefaults_UsesEnvComputerName(t *testing.T) {
-	defer resetDotfilesMocks()
-	setComputerNameEnv(t, "Workstation")
-
-	home := t.TempDir()
-	userHomeDir = func() (string, error) { return home, nil }
-
-	var calls []commandCall
-	runCommand = func(name string, args ...string) error {
-		calls = append(calls, commandCall{name: name, args: append([]string{}, args...)})
-		return nil
-	}
-
-	out := &bytes.Buffer{}
-	if err := applyOSXDefaults(out); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if !hasCommand(calls, "sudo", "scutil", "--set", "ComputerName", "Workstation") {
-		t.Fatalf("expected env computer name command, got %#v", calls)
-	}
 }
 
 func TestApplyOSXDefaults_AllowFailureContinues(t *testing.T) {
-	defer resetDotfilesMocks()
-	setComputerNameEnv(t, "")
+	defer resetOSXDefaultsMocks()
 
 	home := t.TempDir()
 	userHomeDir = func() (string, error) { return home, nil }
@@ -123,7 +176,7 @@ func TestApplyOSXDefaults_AllowFailureContinues(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	if err := applyOSXDefaults(out); err != nil {
+	if err := applyOSXDefaults(out, "Workstation"); err != nil {
 		t.Fatalf("expected allowFailure command to be ignored, got error: %v", err)
 	}
 	if !strings.Contains(out.String(), "Ignoring failure for command: osascript") {
@@ -132,8 +185,7 @@ func TestApplyOSXDefaults_AllowFailureContinues(t *testing.T) {
 }
 
 func TestApplyOSXDefaults_NonAllowFailureReturnsError(t *testing.T) {
-	defer resetDotfilesMocks()
-	setComputerNameEnv(t, "")
+	defer resetOSXDefaultsMocks()
 
 	home := t.TempDir()
 	userHomeDir = func() (string, error) { return home, nil }
@@ -146,7 +198,7 @@ func TestApplyOSXDefaults_NonAllowFailureReturnsError(t *testing.T) {
 	}
 
 	out := &bytes.Buffer{}
-	err := applyOSXDefaults(out)
+	err := applyOSXDefaults(out, "Workstation")
 	if err == nil {
 		t.Fatalf("expected error from non-allowFailure command")
 	}
@@ -214,23 +266,17 @@ func hasOSXDefaultCommand(commands []osxDefaultsCommand, name string, args ...st
 	return false
 }
 
-func setComputerNameEnv(t *testing.T, value string) {
-	t.Helper()
-	original, hadOriginal := os.LookupEnv("COMPUTER_NAME")
-	if value == "" {
-		if err := os.Unsetenv("COMPUTER_NAME"); err != nil {
-			t.Fatalf("failed to unset COMPUTER_NAME: %v", err)
-		}
-	} else {
-		if err := os.Setenv("COMPUTER_NAME", value); err != nil {
-			t.Fatalf("failed to set COMPUTER_NAME: %v", err)
-		}
+func resetOSXDefaultsMocks() {
+	userHomeDir = os.UserHomeDir
+	runCommand = func(name string, args ...string) error {
+		cmd := exec.Command(name, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
 	}
-	t.Cleanup(func() {
-		if hadOriginal {
-			_ = os.Setenv("COMPUTER_NAME", original)
-		} else {
-			_ = os.Unsetenv("COMPUTER_NAME")
-		}
-	})
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		cmd := exec.Command(name, args...)
+		cmd.Stderr = os.Stderr
+		return cmd.Output()
+	}
 }

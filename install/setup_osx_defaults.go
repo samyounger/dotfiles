@@ -1,45 +1,99 @@
 package install
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
 const (
-	defaultComputerName    = "Neo"
 	defaultLocale          = "en_GB@currency=GBP"
 	defaultMeasurementUnit = "Centimeters"
 )
 
 var languagePrefs = []string{"en", "GB"}
+var runCommandOutput = func(name string, args ...string) ([]byte, error) {
+	cmd := exec.Command(name, args...)
+	cmd.Stderr = os.Stderr
+	return cmd.Output()
+}
 
-func SetupOSXDefaults(output io.Writer) {
-	if !runOSXDefaults(output) {
+func SetupOSXDefaults(input io.Reader, output io.Writer) {
+	if !runOSXDefaults(input, output) {
 		return
 	}
 	fmt.Fprintln(output, "OSX defaults setup complete.")
 }
 
-func runOSXDefaults(output io.Writer) bool {
-	if err := applyOSXDefaults(output); err != nil {
+func runOSXDefaults(input io.Reader, output io.Writer) bool {
+	currentComputerName, err := currentComputerName()
+	if err != nil {
+		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
+		return false
+	}
+
+	computerName, err := promptComputerName(input, output, currentComputerName)
+	if err != nil {
+		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
+		return false
+	}
+
+	if err := applyOSXDefaults(output, computerName); err != nil {
 		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
 		return false
 	}
 	return true
 }
 
-func applyOSXDefaults(output io.Writer) error {
+func currentComputerName() (string, error) {
+	rawName, err := runCommandOutput("scutil", "--get", "ComputerName")
+	if err != nil {
+		return "", fmt.Errorf("failed to read current computer name: %w", err)
+	}
+	name := strings.TrimSpace(string(rawName))
+	if name == "" {
+		return "", fmt.Errorf("failed to read current computer name: empty value")
+	}
+	return name, nil
+}
+
+func promptComputerName(input io.Reader, output io.Writer, currentName string) (string, error) {
+	fmt.Fprintf(output, "Current computer name: %s\n", currentName)
+	fmt.Fprintln(output, "1) Keep existing name")
+	fmt.Fprintln(output, "2) Replace with a new name")
+	fmt.Fprint(output, "Select option (1 or 2): ")
+	scanner := bufio.NewScanner(input)
+	if !scanner.Scan() {
+		return "", fmt.Errorf("selection is required")
+	}
+	choice := strings.TrimSpace(scanner.Text())
+
+	switch choice {
+	case "1":
+		return currentName, nil
+	case "2":
+		fmt.Fprint(output, "Enter new computer name: ")
+		if !scanner.Scan() {
+			return "", fmt.Errorf("computer name is required")
+		}
+		computerName := strings.TrimSpace(scanner.Text())
+		if computerName == "" {
+			return "", fmt.Errorf("computer name is required")
+		}
+		return computerName, nil
+	default:
+		return "", fmt.Errorf("invalid selection: %s", choice)
+	}
+}
+
+func applyOSXDefaults(output io.Writer, computerName string) error {
 	home, err := userHomeDir()
 	if err != nil {
 		return err
-	}
-
-	computerName := os.Getenv("COMPUTER_NAME")
-	if strings.TrimSpace(computerName) == "" {
-		computerName = defaultComputerName
 	}
 
 	screenshotFolder := filepath.Join(home, "Downloads")

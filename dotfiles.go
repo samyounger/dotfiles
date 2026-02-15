@@ -43,7 +43,7 @@ func main() {
 	case "2":
 		installFunc(outputWriter)
 	case "3":
-		setupOSXDefaultsFunc(outputWriter)
+		setupOSXDefaultsFunc(inputReader, outputWriter)
 	case "0":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return
