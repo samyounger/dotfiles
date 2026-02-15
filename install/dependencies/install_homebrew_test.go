@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 	"testing"
 )
@@ -18,11 +19,11 @@ func TestInstallHomebrew_AlreadyInstalled(t *testing.T) {
 		called = true
 		return exec.Command("echo")
 	}
-	defer resetExecHomebrewMocks()
+	defer resetExecMocks()
 
 	InstallHomebrew()
-	if called {
-		t.Errorf("Did not expect execCommand to be called if Homebrew is already installed")
+	if !called {
+		t.Errorf("Expected execCommand to be called to print Homebrew version")
 	}
 }
 
@@ -40,7 +41,7 @@ func TestInstallHomebrew_NotInstalled_Success(t *testing.T) {
 		}
 		return exec.Command("echo")
 	}
-	defer resetExecHomebrewMocks()
+	defer resetExecMocks()
 
 	InstallHomebrew()
 	if !called {
@@ -61,10 +62,12 @@ func TestInstallHomebrew_InstallError(t *testing.T) {
 		}
 		return exec.Command("echo")
 	}
-	defer resetExecHomebrewMocks()
+	defer resetExecMocks()
+	defer func() { osExit = os.Exit }()
+	osExit = func(code int) { panic("osExit called") }
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("Expected os.Exit to be called on Homebrew install error")
+			t.Errorf("Expected osExit to be called on Homebrew install error")
 		}
 	}()
 	InstallHomebrew()

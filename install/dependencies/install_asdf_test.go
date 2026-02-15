@@ -7,58 +7,24 @@ import (
 	"testing"
 )
 
-// mockCmd is a mock exec.Cmd
-type mockCmd struct {
-	args   []string
-	runErr error
-}
-
-func (m *mockCmd) Run() error {
-	return m.runErr
-}
-
-func (m *mockCmd) Output() ([]byte, error) {
-	return []byte("asdf version 1.0.0"), nil
-}
-
-func (m *mockCmd) Start() error { return nil }
-func (m *mockCmd) Wait() error  { return nil }
-func (m *mockCmd) StdoutPipe() (os.ReadCloser, error) { return nil, nil }
-func (m *mockCmd) StderrPipe() (os.ReadCloser, error) { return nil, nil }
-
-// mockExecCommand returns a mockCmd
-func mockExecCommand(expectedArgs ...string) func(name string, args ...string) *exec.Cmd {
-	return func(name string, args ...string) *exec.Cmd {
-		cs := []string{"-test.run=TestHelperProcess", "--", name}
-		cs = append(cs, args...)
-		cmd := exec.Command(os.Args[0], cs...)
-		cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-		return cmd
-	}
-}
-
-// mockExecLookPath returns nil if asdf is found, error otherwise
-func mockExecLookPath(found bool) func(string) (string, error) {
-	return func(file string) (string, error) {
-		if found {
-			return "/usr/local/bin/asdf", nil
-		}
-		return "", errors.New("not found")
-	}
-}
-
 func TestCheckAsdfInstalled_Found(t *testing.T) {
 	called := false
-	execLookPath = mockExecLookPath(true)
+	execLookPath = func(file string) (string, error) {
+		if file == "asdf" {
+			return "/usr/local/bin/asdf", nil
+		}
+		return origExecLookPath(file)
+	}
 	execCommand = func(name string, args ...string) *exec.Cmd {
 		called = true
 		return exec.Command("echo")
 	}
+	defer resetExecMocks()
+	defer func() { osExit = os.Exit }()
+	osExit = func(code int) { panic("osExit called") }
 	defer func() {
-		execLookPath = exec.LookPath
-		execCommand = exec.Command
-		if r := recover(); r != nil {
-			// os.Exit will panic in test, that's expected
+		if r := recover(); r == nil {
+			t.Errorf("Expected osExit to be called")
 		}
 	}()
 	checkAsdfInstalled()
@@ -68,19 +34,33 @@ func TestCheckAsdfInstalled_Found(t *testing.T) {
 }
 
 func TestCheckAsdfInstalled_NotFound(t *testing.T) {
-	execLookPath = mockExecLookPath(false)
-	defer func() { execLookPath = exec.LookPath }()
-	// Should not exit or call execCommand
+	execLookPath = func(file string) (string, error) {
+		if file == "asdf" {
+			return "", errors.New("not found")
+		}
+		return origExecLookPath(file)
+	}
+	defer resetExecMocks()
 	checkAsdfInstalled()
 }
 
 func TestInstallAsdf_Success(t *testing.T) {
 	calls := [][]string{}
+	execLookPath = func(file string) (string, error) {
+		if file == "asdf" {
+			return "", errors.New("not found")
+		}
+		if file == "brew" {
+			return "/usr/local/bin/brew", nil
+		}
+		return origExecLookPath(file)
+	}
 	execCommand = func(name string, args ...string) *exec.Cmd {
 		calls = append(calls, append([]string{name}, args...))
 		return exec.Command("echo")
 	}
-	defer func() { execCommand = exec.Command }()
+	defer resetExecMocks()
+
 	installAsdf()
 	if len(calls) != 2 || calls[0][0] != "brew" || calls[1][0] != "asdf" {
 		t.Errorf("Expected brew install asdf and asdf --version, got %v", calls)
@@ -88,16 +68,25 @@ func TestInstallAsdf_Success(t *testing.T) {
 }
 
 func TestInstallAsdf_BrewError(t *testing.T) {
-	execCommand = func(name string, args ...string) *exec.Cmd {
-		cmd := exec.Command("false")
-		return cmd
+	execLookPath = func(file string) (string, error) {
+		if file == "asdf" {
+			return "", errors.New("not found")
+		}
+		if file == "brew" {
+			return "/usr/local/bin/brew", nil
+		}
+		return origExecLookPath(file)
 	}
+	execCommand = func(name string, args ...string) *exec.Cmd {
+		return exec.Command("false")
+	}
+	defer resetExecMocks()
+	defer func() { osExit = os.Exit }()
+	osExit = func(code int) { panic("osExit called") }
 	defer func() {
-		execCommand = exec.Command
 		if r := recover(); r == nil {
-			t.Errorf("Expected os.Exit to be called on error")
+			t.Errorf("Expected osExit to be called on error")
 		}
 	}()
 	installAsdf()
 }
-

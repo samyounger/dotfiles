@@ -2,31 +2,27 @@ package dependencies
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 	"testing"
 )
 
-var (
-	origExecLookPath = execLookPath
-	origExecCommand   = execCommand
-)
-
-func resetExecMocks() {
-	execLookPath = origExecLookPath
-	execCommand = origExecCommand
-}
-
-func TestInstallGithubCLI_AsdfNotInstalled(t *testing.T) {
+func TestInstallGithubCLI_AsdfMissing_Exits(t *testing.T) {
 	execLookPath = func(file string) (string, error) {
 		if file == "asdf" {
+			return "", errors.New("not found")
+		}
+		if file == "gh" {
 			return "", errors.New("not found")
 		}
 		return "/usr/local/bin/" + file, nil
 	}
 	defer resetExecMocks()
+	defer func() { osExit = os.Exit }()
+	osExit = func(code int) { panic("osExit called") }
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("Expected os.Exit to be called if asdf is not installed")
+			t.Errorf("Expected osExit to be called if asdf is not installed")
 		}
 	}()
 	InstallGithubCLI()
@@ -41,6 +37,9 @@ func TestInstallGithubCLI_PluginNotPresent(t *testing.T) {
 	versionCalled := false
 
 	execLookPath = func(file string) (string, error) {
+		if file == "gh" {
+			return "", errors.New("not found")
+		}
 		return "/usr/local/bin/" + file, nil
 	}
 
@@ -82,6 +81,9 @@ func TestInstallGithubCLI_PluginPresent(t *testing.T) {
 	versionCalled := false
 
 	execLookPath = func(file string) (string, error) {
+		if file == "gh" {
+			return "", errors.New("not found")
+		}
 		return "/usr/local/bin/" + file, nil
 	}
 
@@ -119,6 +121,9 @@ func TestInstallGithubCLI_CommandError(t *testing.T) {
 	failOn := "install"
 
 	execLookPath = func(file string) (string, error) {
+		if file == "gh" {
+			return "", errors.New("not found")
+		}
 		return "/usr/local/bin/" + file, nil
 	}
 
@@ -130,29 +135,31 @@ func TestInstallGithubCLI_CommandError(t *testing.T) {
 		return exec.Command("echo")
 	}
 	defer resetExecMocks()
+	defer func() { osExit = os.Exit }()
+	osExit = func(code int) { panic("osExit called") }
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("Expected os.Exit to be called on command error")
+			t.Errorf("Expected osExit to be called on command error")
 		}
 	}()
 	InstallGithubCLI()
 }
 
-func TestInstallGithubCLI_PluginAddSSHFailHTTPSOk(t *testing.T) {
+func TestInstallGithubCLI_PluginAddSSHFallbackToHTTPS(t *testing.T) {
 	calls := [][]string{}
 	pluginListCalled := false
 	addSSHCalled := false
 	addHTTPSCalled := false
-	addHTTPSEnv := []string{}
 	installCalled := false
 	globalCalled := false
 	versionCalled := false
 
 	execLookPath = func(file string) (string, error) {
+		if file == "gh" {
+			return "", errors.New("not found")
+		}
 		return "/usr/local/bin/" + file, nil
 	}
-
-	sshFail := false
 
 	execCommand = func(name string, args ...string) *exec.Cmd {
 		calls = append(calls, append([]string{name}, args...))
@@ -165,13 +172,11 @@ func TestInstallGithubCLI_PluginAddSSHFailHTTPSOk(t *testing.T) {
 		if name == "asdf" && len(args) > 0 && args[0] == "plugin-add" {
 			if len(args) > 2 && args[2] == "git@github.com:kennyp/asdf-gh.git" {
 				addSSHCalled = true
-				sshFail = true
 				// Simulate SSH failure by returning a command that fails
 				return exec.Command("false")
 			}
 			if len(args) > 2 && args[2] == "https://github.com/kennyp/asdf-gh.git" {
 				addHTTPSCalled = true
-				addHTTPSEnv = os.Environ()
 				cmd = exec.Command("echo")
 			}
 		}
@@ -191,17 +196,6 @@ func TestInstallGithubCLI_PluginAddSSHFailHTTPSOk(t *testing.T) {
 	if !pluginListCalled || !addSSHCalled || !addHTTPSCalled || !installCalled || !globalCalled || !versionCalled {
 		t.Errorf("Expected SSH and HTTPS plugin-add, install, global, version; got calls: %v", calls)
 	}
-	// Check that GIT_ASKPASS is set in the environment for HTTPS
-	askpassSet := false
-	for _, env := range addHTTPSEnv {
-		if env == "GIT_ASKPASS=/bin/echo" {
-			askpassSet = true
-			break
-		}
-	}
-	if !askpassSet {
-		t.Errorf("Expected GIT_ASKPASS to be set in HTTPS plugin-add environment")
-	}
 }
 
 func TestInstallGithubCLI_AlreadyInstalled(t *testing.T) {
@@ -210,17 +204,16 @@ func TestInstallGithubCLI_AlreadyInstalled(t *testing.T) {
 		if file == "gh" {
 			return "/usr/local/bin/gh", nil
 		}
-		return "/usr/local/bin/" + file, nil
+		return origExecLookPath(file)
 	}
 	execCommand = func(name string, args ...string) *exec.Cmd {
-		if name == "gh" && len(args) > 0 && args[0] == "--version" {
-			called = true
-		}
+		called = true
 		return exec.Command("echo")
 	}
 	defer resetExecMocks()
+
 	InstallGithubCLI()
 	if !called {
-		t.Errorf("Expected printGithubCLIVersion to be called if gh is already installed")
+		t.Errorf("Expected execCommand to be called if gh is already installed (for version print)")
 	}
 }

@@ -3,15 +3,15 @@ package install
 import (
 	"bufio"
 	"fmt"
+	"github.com/syounger-ut/dotfiles/install/dependencies"
 	"io"
 	"strings"
-	"github.com/syounger-ut/dotfiles/install/dependencies"
 )
 
 // Dependencies interactively installs Homebrew, zsh, git, GitHub CLI, and asdf
 func Dependencies(input io.Reader, output io.Writer) {
 	options := []struct {
-		name string
+		name   string
 		action func()
 	}{
 		{"Homebrew", dependencies.InstallHomebrew},

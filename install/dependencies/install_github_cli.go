@@ -3,7 +3,6 @@ package dependencies
 import (
 	"fmt"
 	"os"
-	"os/exec"
 )
 
 // InstallGithubCLI installs the GitHub CLI via asdf plugin
@@ -22,7 +21,7 @@ func InstallGithubCLI() {
 
 // isGithubCLIInstalled checks if the gh CLI is already installed
 func isGithubCLIInstalled() bool {
-	if _, err := exec.LookPath("gh"); err == nil {
+	if _, err := execLookPath("gh"); err == nil {
 		return true
 	}
 	return false
@@ -30,25 +29,25 @@ func isGithubCLIInstalled() bool {
 
 // ensureAsdfInstalled checks if asdf is installed
 func ensureAsdfInstalled() {
-	if _, err := exec.LookPath("asdf"); err != nil {
+	if _, err := execLookPath("asdf"); err != nil {
 		fmt.Fprintln(os.Stderr, "asdf is not installed. Please install asdf first.")
-		os.Exit(1)
+		osExit(1)
 	}
 }
 
 // ensureGithubPluginAdded checks if the github-cli plugin is added, and adds it if missing
 func ensureGithubPluginAdded() {
-	pluginListCmd := exec.Command("asdf", "plugin-list")
+	pluginListCmd := execCommand("asdf", "plugin-list")
 	pluginListOut, err := pluginListCmd.Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error listing asdf plugins: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
-	if !containsPlugin(string(pluginListOut), "github-cli") {
+	if !containsPlugin(string(pluginListOut), "github-cli") && !containsPlugin(string(pluginListOut), "gh") {
 		fmt.Println("Adding github-cli plugin to asdf...")
 		if err := addGithubPlugin(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error adding github-cli plugin: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 	} else {
 		fmt.Println("github-cli plugin already added to asdf.")
@@ -57,40 +56,47 @@ func ensureGithubPluginAdded() {
 
 // addGithubPlugin tries to add the plugin using SSH, then HTTPS with GIT_ASKPASS fallback
 func addGithubPlugin() error {
-	var addCmd = exec.Command("asdf", "plugin-add", "github-cli")
-	addCmd.Stdout = os.Stdout
-	addCmd.Stderr = os.Stderr
-	addCmd.Env = append(os.Environ(), "GIT_ASKPASS=/bin/echo")
-	return addCmd.Run()
+	sshCmd := execCommand("asdf", "plugin-add", "github-cli", "git@github.com:kennyp/asdf-gh.git")
+	sshCmd.Stdout = os.Stdout
+	sshCmd.Stderr = os.Stderr
+	if err := sshCmd.Run(); err == nil {
+		return nil
+	}
+
+	httpsCmd := execCommand("asdf", "plugin-add", "github-cli", "https://github.com/kennyp/asdf-gh.git")
+	httpsCmd.Stdout = os.Stdout
+	httpsCmd.Stderr = os.Stderr
+	httpsCmd.Env = append(os.Environ(), "GIT_ASKPASS=/bin/echo")
+	return httpsCmd.Run()
 }
 
 // installLatestGithubCLI installs the latest github-cli version via asdf
 func installLatestGithubCLI() {
 	fmt.Println("Installing latest github-cli via asdf...")
-	installCmd := exec.Command("asdf", "install", "github-cli", "latest")
+	installCmd := execCommand("asdf", "install", "github-cli", "latest")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 	if err := installCmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error installing github-cli: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 }
 
 // setGlobalGithubCLIVersion sets the global github-cli version to latest
 func setGlobalGithubCLIVersion() {
 	fmt.Println("Setting github-cli global version to latest...")
-	globalCmd := exec.Command("asdf", "global", "github-cli", "latest")
+	globalCmd := execCommand("asdf", "global", "github-cli", "latest")
 	globalCmd.Stdout = os.Stdout
 	globalCmd.Stderr = os.Stderr
 	if err := globalCmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error setting github-cli global version: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 }
 
 // printGithubCLIVersion prints the installed github-cli version
 func printGithubCLIVersion() {
-	versionCmd := exec.Command("gh", "--version")
+	versionCmd := execCommand("gh", "--version")
 	versionCmd.Stdout = os.Stdout
 	versionCmd.Stderr = os.Stderr
 	versionCmd.Run()

@@ -3,12 +3,11 @@ package dependencies
 import (
 	"fmt"
 	"os"
-	"os/exec"
 )
 
 // printGitVersion prints the installed git version
 func printGitVersion() {
-	cmd := exec.Command("git", "--version")
+	cmd := execCommand("git", "--version")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()
@@ -16,7 +15,7 @@ func printGitVersion() {
 
 // checkGitInstalled checks if git is already installed
 func checkGitInstalled() bool {
-	if _, err := exec.LookPath("git"); err == nil {
+	if _, err := execLookPath("git"); err == nil {
 		fmt.Print("git is already installed: ")
 		printGitVersion()
 		return true
@@ -27,14 +26,14 @@ func checkGitInstalled() bool {
 // installGit installs git using Homebrew
 func installGit() {
 	fmt.Println("Installing git using Homebrew...")
-	cmd := exec.Command("brew", "install", "git")
+	cmd := execCommand("brew", "install", "git")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error installing git: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
-	cmd = exec.Command("git", "--version")
+	cmd = execCommand("git", "--version")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	fmt.Print("git installation complete. Version: ")

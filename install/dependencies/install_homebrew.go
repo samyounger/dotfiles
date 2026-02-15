@@ -3,7 +3,6 @@ package dependencies
 import (
 	"fmt"
 	"os"
-	"os/exec"
 )
 
 // HOMEBREW_INSTALL_URL is scoped to this file
@@ -19,7 +18,7 @@ func isHomebrewInstalled() bool {
 
 // printHomebrewVersion prints the installed Homebrew version
 func printHomebrewVersion() {
-	cmd := exec.Command("brew", "--version")
+	cmd := execCommand("brew", "--version")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()
@@ -38,6 +37,6 @@ func InstallHomebrew() {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error installing Homebrew: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 }

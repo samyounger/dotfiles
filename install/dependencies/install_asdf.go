@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var osExit = os.Exit
+
 // checkAsdfInstalled checks if asdf is already installed
 func checkAsdfInstalled() {
 	if _, err := execLookPath("asdf"); err == nil {
@@ -13,7 +15,7 @@ func checkAsdfInstalled() {
 		cmd.Stderr = os.Stderr
 		fmt.Print("asdf is already installed: ")
 		cmd.Run()
-		os.Exit(0)
+		osExit(0)
 	}
 }
 
@@ -25,7 +27,7 @@ func installAsdf() {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error installing asdf: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 	cmd = execCommand("asdf", "--version")
 	cmd.Stdout = os.Stdout
