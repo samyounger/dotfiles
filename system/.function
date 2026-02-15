@@ -1,3 +1,7 @@
 doc() {
   docker-compose run web $@
 }
+
+pi() {
+  ssh "${PIHOLE_SSH_USER}@${PIHOLE_SSH_IP}"
+}

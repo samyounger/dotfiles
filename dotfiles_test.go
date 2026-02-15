@@ -10,6 +10,8 @@ import (
 func TestMain_Setup(t *testing.T) {
 	var calledSetup bool
 	setupFunc = func(input io.Reader, output io.Writer) { calledSetup = true }
+	installFunc = func(output io.Writer) { t.Errorf("Should not call installFunc") }
+	setupMachineFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupMachineFunc") }
 	inputReader = strings.NewReader("1\n")
 	var buf bytes.Buffer
 	outputWriter = &buf
@@ -24,9 +26,43 @@ func TestMain_Setup(t *testing.T) {
 	}
 }
 
+func TestMain_InstallDotfiles(t *testing.T) {
+	setupFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupFunc") }
+	var calledInstall bool
+	installFunc = func(output io.Writer) { calledInstall = true }
+	setupMachineFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupMachineFunc") }
+	inputReader = strings.NewReader("2\n")
+	var buf bytes.Buffer
+	outputWriter = &buf
+
+	main()
+
+	if !calledInstall {
+		t.Errorf("Expected installFunc to be called")
+	}
+}
+
+func TestMain_SetupMachine(t *testing.T) {
+	setupFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupFunc") }
+	installFunc = func(output io.Writer) { t.Errorf("Should not call installFunc") }
+	var calledSetupMachine bool
+	setupMachineFunc = func(input io.Reader, output io.Writer) { calledSetupMachine = true }
+	inputReader = strings.NewReader("3\n")
+	var buf bytes.Buffer
+	outputWriter = &buf
+
+	main()
+
+	if !calledSetupMachine {
+		t.Errorf("Expected setupMachineFunc to be called")
+	}
+}
+
 func TestMain_Exit(t *testing.T) {
 	setupFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupFunc") }
-	inputReader = strings.NewReader("5\n")
+	installFunc = func(output io.Writer) { t.Errorf("Should not call installFunc") }
+	setupMachineFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupMachineFunc") }
+	inputReader = strings.NewReader("0\n")
 	var buf bytes.Buffer
 	outputWriter = &buf
 
@@ -39,6 +75,8 @@ func TestMain_Exit(t *testing.T) {
 
 func TestMain_Default(t *testing.T) {
 	setupFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupFunc") }
+	installFunc = func(output io.Writer) { t.Errorf("Should not call installFunc") }
+	setupMachineFunc = func(input io.Reader, output io.Writer) { t.Errorf("Should not call setupMachineFunc") }
 	inputReader = strings.NewReader("foobar\n")
 	var buf bytes.Buffer
 	outputWriter = &buf

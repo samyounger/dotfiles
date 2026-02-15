@@ -13,3 +13,10 @@ export PATH="$HOME/.local/bin:$PATH"
 
 export PIHOLE_SSH_USER=""
 export PIHOLE_SSH_IP=""
+
+# For Github-CLI authentication via 1Password
+export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+export COURSIER_PATH="$HOME/Library/Application Support/Coursier/bin"
+export GOPATH="$HOME/source/go"
+export PYTHON_PATH="/usr/bin/python3"
