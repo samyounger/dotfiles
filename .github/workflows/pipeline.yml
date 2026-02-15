@@ -1,0 +1,121 @@
+name: Pipeline
+
+on:
+  push: {}
+  pull_request:
+    types: [closed]
+    branches: [ main ]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+      - name: Build
+        run: go build ./...
+      - name: Run unit tests
+        run: go test -v ./...
+      - name: Run gofmt
+        run: gofmt -l -s -w .
+      - name: Check for unformatted files
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "The following files are not properly formatted:" >&2
+            gofmt -l .
+            exit 1
+          fi
+
+  release-package:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+
+      - name: Compute next SemVer tag
+        id: semver
+        shell: bash
+        run: |
+          merge_sha="${{ github.event.pull_request.merge_commit_sha }}"
+          existing_tag="$(git tag --points-at "$merge_sha" --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          if [ -n "$existing_tag" ]; then
+            echo "tag=$existing_tag" >> "$GITHUB_OUTPUT"
+            echo "version=${existing_tag#v}" >> "$GITHUB_OUTPUT"
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
+
+          IFS='.' read -r major minor patch <<< "${latest_tag#v}"
+          next_tag="v${major}.${minor}.$((patch + 1))"
+
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "version=${next_tag#v}" >> "$GITHUB_OUTPUT"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag on merge commit
+        if: ${{ steps.semver.outputs.created == 'true' }}
+        shell: bash
+        run: |
+          merge_sha="${{ github.event.pull_request.merge_commit_sha }}"
+          tag="${{ steps.semver.outputs.tag }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$tag" "$merge_sha" -m "Release $tag"
+          git push origin "$tag"
+
+      - name: Set package image name
+        id: image
+        shell: bash
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/dotfiles" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build binary
+        run: |
+          mkdir -p dist
+          go build -o dist/dotfiles .
+
+      - name: Build and publish package to GitHub Packages (GHCR)
+        shell: bash
+        run: |
+          cat > Dockerfile.release <<'EOF'
+          FROM gcr.io/distroless/base-debian12
+          COPY dist/dotfiles /usr/local/bin/dotfiles
+          ENTRYPOINT ["/usr/local/bin/dotfiles"]
+          EOF
+
+          docker build -f Dockerfile.release \
+            -t "${{ steps.image.outputs.name }}:${{ steps.semver.outputs.version }}" \
+            -t "${{ steps.image.outputs.name }}:latest" .
+          docker push "${{ steps.image.outputs.name }}:${{ steps.semver.outputs.version }}"
+          docker push "${{ steps.image.outputs.name }}:latest"
