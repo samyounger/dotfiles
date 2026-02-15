@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/syounger-ut/dotfiles/install"
 	"io"
 	"os"
-	"github.com/syounger-ut/dotfiles/install"
 )
 
 // Dependency injection for testability
