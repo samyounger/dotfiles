@@ -21,21 +21,12 @@ var runCommand = func(name string, args ...string) error {
 }
 
 func InstallDotfiles(output io.Writer) {
-	if err := applyOSXDefaults(); err != nil {
-		fmt.Fprintf(output, "Failed to apply OSX defaults: %v\n", err)
-		return
-	}
-
 	if err := symlinkHomeFiles(output); err != nil {
 		fmt.Fprintf(output, "Failed to create symlinks: %v\n", err)
 		return
 	}
 
 	fmt.Fprintln(output, "Successful installation.")
-}
-
-func applyOSXDefaults() error {
-	return runCommand("bash", "-c", "source ./osxdefaults.sh")
 }
 
 func symlinkHomeFiles(output io.Writer) error {

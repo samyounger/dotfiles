@@ -15,12 +15,6 @@ import (
 func TestInstallDotfiles_Success(t *testing.T) {
 	defer resetDotfilesMocks()
 
-	runCommand = func(name string, args ...string) error {
-		if name != "bash" || len(args) != 2 || args[0] != "-c" || args[1] != "source ./osxdefaults.sh" {
-			t.Fatalf("unexpected command: %s %v", name, args)
-		}
-		return nil
-	}
 	userHomeDir = func() (string, error) { return "/tmp/home", nil }
 	lstat = func(name string) (fs.FileInfo, error) { return nil, fs.ErrNotExist }
 	created := map[string]string{}
@@ -53,23 +47,22 @@ func TestInstallDotfiles_Success(t *testing.T) {
 	}
 }
 
-func TestInstallDotfiles_OSXDefaultsFailure(t *testing.T) {
+func TestInstallDotfiles_HomeDirFailure(t *testing.T) {
 	defer resetDotfilesMocks()
 
-	runCommand = func(name string, args ...string) error { return errors.New("boom") }
+	userHomeDir = func() (string, error) { return "", errors.New("boom") }
 
 	out := &bytes.Buffer{}
 	InstallDotfiles(out)
 
-	if !strings.Contains(out.String(), "Failed to apply OSX defaults") {
-		t.Fatalf("expected osxdefaults error message, got: %s", out.String())
+	if !strings.Contains(out.String(), "Failed to create symlinks") {
+		t.Fatalf("expected symlink error message, got: %s", out.String())
 	}
 }
 
 func TestInstallDotfiles_SymlinkFailure(t *testing.T) {
 	defer resetDotfilesMocks()
 
-	runCommand = func(name string, args ...string) error { return nil }
 	userHomeDir = func() (string, error) { return "/tmp/home", nil }
 	lstat = func(name string) (fs.FileInfo, error) { return nil, fs.ErrNotExist }
 	createSymlink = func(oldname, newname string) error {

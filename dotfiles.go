@@ -12,6 +12,7 @@ import (
 // Dependency injection for testability
 var setupFunc = install.Dependencies
 var installFunc = install.InstallDotfiles
+var setupOSXDefaultsFunc = install.SetupOSXDefaults
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
 
@@ -29,6 +30,7 @@ const text = `
 Options:
 1) Setup dependencies
 2) Install dotfiles
+3) Setup OSX Defaults
 0) Exit
 $ `
 
@@ -40,6 +42,8 @@ func main() {
 		setupFunc(inputReader, outputWriter)
 	case "2":
 		installFunc(outputWriter)
+	case "3":
+		setupOSXDefaultsFunc(outputWriter)
 	case "0":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return
