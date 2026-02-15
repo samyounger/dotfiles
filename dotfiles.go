@@ -3,13 +3,15 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/syounger-ut/dotfiles/install"
 	"io"
 	"os"
+
+	"github.com/syounger-ut/dotfiles/install"
 )
 
 // Dependency injection for testability
 var setupFunc = install.Dependencies
+var installFunc = install.InstallDotfiles
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
 
@@ -25,8 +27,9 @@ func waitForInput() string {
 
 const text = `
 Options:
-1) Setup (dependencies)
-5) Exit
+1) Setup dependencies
+2) Install dotfiles
+0) Exit
 $ `
 
 func main() {
@@ -35,7 +38,9 @@ func main() {
 	switch result {
 	case "1":
 		setupFunc(inputReader, outputWriter)
-	case "5":
+	case "2":
+		installFunc(outputWriter)
+	case "0":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return
 	default:
