@@ -3,11 +3,14 @@ package install
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/syounger-ut/dotfiles/install/application_settings"
 )
 
 type commandCall struct {
@@ -72,6 +75,85 @@ func TestSetupMachine_SetupChromeFailure(t *testing.T) {
 
 	if !strings.Contains(out.String(), "Failed to apply Chrome defaults") {
 		t.Fatalf("expected chrome failure message, got: %s", out.String())
+	}
+}
+
+func TestSetupMachine_SetupDockSuccess(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	desiredDockApplicationsFunc = func() []string { return []string{"app1", "app2"} }
+	buildDockFindCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "find", Args: []string{appPath}}
+	}
+	buildDockAddCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "add", Args: []string{appPath}}
+	}
+	buildDockRestartCommandFunc = func() application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "restart", Args: []string{"Dock"}}
+	}
+
+	notFoundErr := exitStatusError(t, 1)
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		if name == "find" {
+			return nil, notFoundErr
+		}
+		return nil, errors.New("unexpected command")
+	}
+
+	var calls []commandCall
+	runCommand = func(name string, args ...string) error {
+		calls = append(calls, commandCall{name: name, args: append([]string{}, args...)})
+		return nil
+	}
+
+	out := &bytes.Buffer{}
+	SetupMachine(strings.NewReader("3\n"), out)
+
+	if !strings.Contains(out.String(), "Dock defaults setup complete.") {
+		t.Fatalf("expected dock success message, got: %s", out.String())
+	}
+	if !hasCommand(calls, "add", "app1") {
+		t.Fatalf("expected dock command to be run, got %#v", calls)
+	}
+	if !hasCommand(calls, "add", "app2") {
+		t.Fatalf("expected second dock add command to be run, got %#v", calls)
+	}
+	if !hasCommand(calls, "restart", "Dock") {
+		t.Fatalf("expected Dock restart command to be run, got %#v", calls)
+	}
+}
+
+func TestSetupMachine_SetupDockFailure(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	desiredDockApplicationsFunc = func() []string { return []string{"app1"} }
+	buildDockFindCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "find", Args: []string{appPath}}
+	}
+	buildDockAddCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "add", Args: []string{appPath}}
+	}
+
+	notFoundErr := exitStatusError(t, 1)
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		if name == "find" {
+			return nil, notFoundErr
+		}
+		return nil, errors.New("unexpected command")
+	}
+
+	runCommand = func(name string, args ...string) error {
+		if name == "add" {
+			return errors.New("add failed")
+		}
+		return nil
+	}
+
+	out := &bytes.Buffer{}
+	SetupMachine(strings.NewReader("3\n"), out)
+
+	if !strings.Contains(out.String(), "Failed to apply Dock defaults") {
+		t.Fatalf("expected dock failure message, got: %s", out.String())
 	}
 }
 
@@ -286,6 +368,107 @@ func TestApplyChromeDefaults_Failure(t *testing.T) {
 	}
 }
 
+func TestApplyDockDefaults_Success(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	desiredDockApplicationsFunc = func() []string { return []string{"app1", "app2"} }
+	buildDockFindCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "find", Args: []string{appPath}}
+	}
+	buildDockAddCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "add", Args: []string{appPath}}
+	}
+	buildDockRestartCommandFunc = func() application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "restart", Args: []string{"Dock"}}
+	}
+
+	notFoundErr := exitStatusError(t, 1)
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		if name == "find" {
+			return nil, notFoundErr
+		}
+		return nil, errors.New("unexpected command")
+	}
+
+	var calls []commandCall
+	runCommand = func(name string, args ...string) error {
+		calls = append(calls, commandCall{name: name, args: append([]string{}, args...)})
+		return nil
+	}
+
+	if err := applyDockDefaults(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(calls) != 3 {
+		t.Fatalf("expected 3 dock execution commands, got %d", len(calls))
+	}
+}
+
+func TestApplyDockDefaults_Failure(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	desiredDockApplicationsFunc = func() []string { return []string{"app1"} }
+	buildDockFindCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "find", Args: []string{appPath}}
+	}
+	buildDockAddCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "add", Args: []string{appPath}}
+	}
+
+	notFoundErr := exitStatusError(t, 1)
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		if name == "find" {
+			return nil, notFoundErr
+		}
+		return nil, errors.New("unexpected command")
+	}
+
+	runCommand = func(name string, args ...string) error {
+		if name == "add" {
+			return errors.New("boom")
+		}
+		return nil
+	}
+
+	err := applyDockDefaults()
+	if err == nil {
+		t.Fatalf("expected error from dock defaults command")
+	}
+	if !strings.Contains(err.Error(), "add app1") {
+		t.Fatalf("expected contextual command error, got: %v", err)
+	}
+}
+
+func TestApplyDockDefaults_NoChangesWhenAppsAlreadyExist(t *testing.T) {
+	defer resetOSXDefaultsMocks()
+
+	desiredDockApplicationsFunc = func() []string { return []string{"app1", "app2"} }
+	buildDockFindCommandFunc = func(appPath string) application_settings.SettingsCommand {
+		return application_settings.SettingsCommand{Name: "find", Args: []string{appPath}}
+	}
+
+	runCommandOutput = func(name string, args ...string) ([]byte, error) {
+		if name == "find" {
+			return []byte("found"), nil
+		}
+		return nil, errors.New("unexpected command")
+	}
+
+	called := false
+	runCommand = func(name string, args ...string) error {
+		called = true
+		return nil
+	}
+
+	if err := applyDockDefaults(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if called {
+		t.Fatalf("did not expect dock mutation commands when all apps already exist")
+	}
+}
+
 func hasCommand(calls []commandCall, name string, args ...string) bool {
 	for _, call := range calls {
 		if call.name != name {
@@ -321,4 +504,17 @@ func resetOSXDefaultsMocks() {
 		cmd.Stderr = os.Stderr
 		return cmd.Output()
 	}
+	desiredDockApplicationsFunc = application_settings.DesiredDockApplications
+	buildDockFindCommandFunc = application_settings.BuildDockFindCommand
+	buildDockAddCommandFunc = application_settings.BuildDockAddCommand
+	buildDockRestartCommandFunc = application_settings.BuildDockRestartCommand
+}
+
+func exitStatusError(t *testing.T, code int) error {
+	t.Helper()
+	_, err := exec.Command("sh", "-c", fmt.Sprintf("exit %d", code)).Output()
+	if err == nil {
+		t.Fatalf("expected non-nil error for exit code %d", code)
+	}
+	return err
 }

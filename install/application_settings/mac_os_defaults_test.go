@@ -72,3 +72,25 @@ func hasMacOSDefaultCommandAllowFailure(commands []SettingsCommand, name string,
 	}
 	return false
 }
+
+func hasSettingsCommand(commands []SettingsCommand, name string, args ...string) bool {
+	for _, command := range commands {
+		if command.Name != name {
+			continue
+		}
+		if len(command.Args) != len(args) {
+			continue
+		}
+		matched := true
+		for i := range args {
+			if command.Args[i] != args[i] {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
+}
