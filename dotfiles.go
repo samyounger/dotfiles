@@ -6,12 +6,14 @@ import (
 	"io"
 	"os"
 	"github.com/syounger-ut/dotfiles/install/dependencies"
+	"github.com/syounger-ut/dotfiles/install"
 )
 
 // Dependency injection for testability
 var installGitFunc = dependencies.InstallGit
 var installAsdfFunc = dependencies.InstallAsdf
 var installGithubCLIFunc = dependencies.InstallGithubCLI
+var setupFunc = install.Setup
 var inputReader io.Reader = os.Stdin
 var outputWriter io.Writer = os.Stdout
 
@@ -30,7 +32,8 @@ Options:
 1) Install git
 2) Install asdf
 3) Install GitHub CLI
-4) Exit
+4) Setup (Homebrew & zsh)
+5) Exit
 $ `
 
 func main() {
@@ -44,6 +47,8 @@ func main() {
 	case "3":
 		installGithubCLIFunc()
 	case "4":
+		setupFunc()
+	case "5":
 		fmt.Fprintln(outputWriter, "Exiting.")
 		return
 	default:

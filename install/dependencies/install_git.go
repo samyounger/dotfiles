@@ -6,16 +6,22 @@ import (
 	"os/exec"
 )
 
+// printGitVersion prints the installed git version
+func printGitVersion() {
+	cmd := exec.Command("git", "--version")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Run()
+}
+
 // checkGitInstalled checks if git is already installed
-func checkGitInstalled() {
+func checkGitInstalled() bool {
 	if _, err := exec.LookPath("git"); err == nil {
-		cmd := exec.Command("git", "--version")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
 		fmt.Print("git is already installed: ")
-		cmd.Run()
-		os.Exit(0)
+		printGitVersion()
+		return true
 	}
+	return false
 }
 
 // installGit installs git using Homebrew
@@ -36,7 +42,9 @@ func installGit() {
 }
 
 func InstallGit() {
-	checkGitInstalled()
-	InstallHomebrewIfNeeded()
+	if checkGitInstalled() {
+		return
+	}
+	InstallHomebrew()
 	installGit()
 }

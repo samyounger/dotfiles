@@ -36,6 +36,6 @@ func installAsdf() {
 
 func InstallAsdf() {
 	checkAsdfInstalled()
-	InstallHomebrewIfNeeded()
+	InstallHomebrew()
 	installAsdf()
 }

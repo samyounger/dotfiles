@@ -93,7 +93,6 @@ func printGithubCLIVersion() {
 	versionCmd := exec.Command("gh", "--version")
 	versionCmd.Stdout = os.Stdout
 	versionCmd.Stderr = os.Stderr
-	fmt.Print("GitHub CLI installation complete. Version: ")
 	versionCmd.Run()
 }
 

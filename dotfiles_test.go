@@ -49,7 +49,8 @@ func TestMain_Exit(t *testing.T) {
 	installGitFunc = func() { t.Errorf("Should not call installGitFunc") }
 	installAsdfFunc = func() { t.Errorf("Should not call installAsdfFunc") }
 	installGithubCLIFunc = func() { t.Errorf("Should not call installGithubCLIFunc") }
-	inputReader = strings.NewReader("4\n")
+	setupFunc = func() { t.Errorf("Should not call setupFunc") }
+	inputReader = strings.NewReader("5\n")
 	var buf bytes.Buffer
 	outputWriter = &buf
 
