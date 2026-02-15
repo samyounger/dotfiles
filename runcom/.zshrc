@@ -1,6 +1,3 @@
-# If you come from bash you might have to change your $PATH.
-export PATH=/usr/local/bin:$PATH
-
 # FIX TO THIS ISSUE https://github.com/robbyrussell/oh-my-zsh/issues/6835
 # ZSH_DISABLE_COMPFIX=true
 
@@ -125,26 +122,12 @@ source "$HOME/.dotfiles/system/.alias"
 source "$HOME/.dotfiles/system/.function"
 
 #########################################################################################
+## SOURCED PATHS
+#########################################################################################
+source "$HOME/.dotfiles/system/.path"
+
+#########################################################################################
 #########################################################################################
 
 # GPG key
 export GPG_TTY=$(tty)
-
-#########################################################################################
-## GO SETUP
-#########################################################################################
-# Import go executables in the shell path
-export GOPATH=$HOME/go
-export ASDF_GOLANG_MOD_VERSION_ENABLED=true
-
-#########################################################################################
-## JAVA SETUP
-#########################################################################################
-export JAVA_HOME=$(/usr/libexec/java_home)
-
-#########################################################################################
-## PYTHON SETUP
-#########################################################################################
-if [ -d "$HOME/.local/bin" ] ; then
-export PATH="$HOME/.local/bin:$PATH"
-fi
