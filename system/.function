@@ -3,5 +3,14 @@ doc() {
 }
 
 pi() {
+  if [ -z "${PIHOLE_SSH_USER:-}" ]; then
+    echo "Error: PIHOLE_SSH_USER is not set" >&2
+    return 1
+  fi
+  if [ -z "${PIHOLE_SSH_IP:-}" ]; then
+    echo "Error: PIHOLE_SSH_IP is not set" >&2
+    return 1
+  fi
+
   ssh "${PIHOLE_SSH_USER}@${PIHOLE_SSH_IP}"
 }
