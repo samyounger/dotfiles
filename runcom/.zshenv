@@ -13,3 +13,7 @@ export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/
 
 # Source local overrides if the file exists
 source "$HOME/.zshenv.local" 2>/dev/null
+
+# Path to Github MCP
+export COPILOT_MCP_CONFIG="$HOME/.config/copilot/mcp.json"
+
