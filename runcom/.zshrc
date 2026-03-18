@@ -4,12 +4,6 @@
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
-# DOTFILES NOT WORKING YET
-# for DOTFILE in `find $HOME/development/05-misc/.dotfiles`
-# do
-#     [ -f "$DOTFILE" ] && source "$DOTFILE"
-# done
-
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
@@ -82,23 +76,6 @@ source $ZSH/oh-my-zsh.sh
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-#########################################################################################
-## SET DEFAULT TEXT EDITOR
-#########################################################################################
-
-export EDITOR='vim'
-# export PAGER='less -f'
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
 #########################################################################################
 #########################################################################################
 
@@ -128,6 +105,3 @@ source "$HOME/.dotfiles/system/.path"
 
 #########################################################################################
 #########################################################################################
-
-# GPG key
-export GPG_TTY=$(tty)

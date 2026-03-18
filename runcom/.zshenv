@@ -3,6 +3,8 @@
 
 # Set user-specific environment variables
 export EDITOR="nvim"
+
+## Set language environment
 export LANG="en_GB.UTF-8"
 
 # Add custom bin directories to PATH
@@ -17,3 +19,5 @@ source "$HOME/.zshenv.local" 2>/dev/null
 # Path to Github MCP
 export COPILOT_MCP_CONFIG="$HOME/.config/copilot/mcp.json"
 
+# GPG key
+export GPG_TTY=$(tty)
