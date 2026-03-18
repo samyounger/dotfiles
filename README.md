@@ -3,14 +3,11 @@ My collection of dotfiles
 
 ## Setup
 
-Place this in the `.zshrc` file
+Clone this repository to your $HOME / ~ directory.
 
-```sh
-for DOTFILE in `find "$HOME/development/05-misc/.dotfiles" -not -path '*.md' -not -path '*.git/*'`
-do
-  [ -f "$DOTFILE" ] && source "$DOTFILE"
-done
 ```
+ $ ln -sf "$HOME/.dotfiles/runcom/.zshrc" "$HOME/.zshrc"
+ ```
 
 ## References
 
