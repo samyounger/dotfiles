@@ -3,9 +3,10 @@ package install
 import (
 	"bufio"
 	"fmt"
-	"github.com/syounger-ut/dotfiles/install/dependencies"
 	"io"
 	"strings"
+
+	"github.com/samyounger/dotfiles/install/dependencies"
 )
 
 // Dependencies interactively installs Homebrew, zsh, git, GitHub CLI, and asdf

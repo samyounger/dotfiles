@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/syounger-ut/dotfiles/install/application_settings"
+	"github.com/samyounger/dotfiles/install/application_settings"
 )
 
 type commandCall struct {

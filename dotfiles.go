@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/syounger-ut/dotfiles/install"
+	"github.com/samyounger/dotfiles/install"
 )
 
 // Dependency injection for testability

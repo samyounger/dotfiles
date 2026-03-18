@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/syounger-ut/dotfiles/install/application_settings"
+	"github.com/samyounger/dotfiles/install/application_settings"
 )
 
 var runCommandOutput = func(name string, args ...string) ([]byte, error) {
