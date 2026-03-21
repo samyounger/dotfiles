@@ -1,6 +1,7 @@
 [user]
-	name = Sam Younger
-	email = syounger@usertesting.com
+  name = Sam Younger
+  email = samyounger@fastmail.com
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAlHTOWv6dTS5TKBjYtxnzL/qU14qjk7fQE6Q/R3JrQ
 [gpg]
   format = ssh
 [gpg "ssh"]
@@ -8,11 +9,9 @@
 [commit]
   gpgsign = true
 [core]
-	excludesfile = "~/.gitignore_global"
-[alias]
-	goodmorning = !zsh -c \"source ~/.zshrc"
+  excludesfile = "~/.dotfiles/git/.gitignore_global"
 [pull]
   rebase = false
 # Enforce SSH
 [url "ssh://git@github.com/"]
-	insteadOf = https://github.com/
+  insteadOf = https://github.com/
