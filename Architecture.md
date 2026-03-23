@@ -9,6 +9,7 @@ This repository is a Go-based dotfiles and machine bootstrap project. It combine
 ├── dotfiles.go                  # CLI entrypoint and top-level menu
 ├── dotfiles_test.go             # tests for main menu dispatch
 ├── install/
+│   ├── bootstrap_macos.sh       # blank-slate macOS bootstrap before the repo is cloned
 │   ├── setup_dev_dependencies.go
 │   ├── setup_dotfiles.go
 │   ├── setup_machine.go
@@ -42,6 +43,7 @@ flowchart TD
 
 - `install`
   - Coordinates the main behaviors:
+    - blank-slate macOS bootstrap via `install/bootstrap_macos.sh`
     - dependency installation
     - dotfile symlink creation
     - machine setup flows
@@ -58,6 +60,7 @@ flowchart TD
 - `runcom/`, `git/`, `system/`
   - Store the actual dotfiles and shell fragments managed by the repo.
   - `runcom/` and `git/` are linked into the home directory by the installer code.
+  - `runcom/.tool-versions` is copied into `$HOME` so `asdf` can manage tool versions without mutating the checked-in file.
 
 ## Runtime flow
 
@@ -192,4 +195,3 @@ When adding features or refactoring:
 - preserve existing menu and output behavior unless intentionally changing UX
 - avoid introducing new tooling unless the repository already uses it
 - finish by running `go test ./...`
-

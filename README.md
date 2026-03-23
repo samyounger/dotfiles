@@ -1,13 +1,43 @@
 # dotfiles
 My collection of dotfiles
 
+## Blank-slate macOS bootstrap
+
+On a relatively fresh Mac, run the bootstrap script first. It installs the minimum needed to clone and use this repo:
+
+- Homebrew
+- `git`
+- `zsh`
+- `asdf`
+- `1Password`
+- Go via `asdf`
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/samyounger/dotfiles/main/install/bootstrap_macos.sh | bash
+```
+
+The bootstrap flow will pause for the manual `1Password` step so you can sign in, unlock it, and expose your GitHub SSH key through the `1Password` SSH agent before the repo is cloned.
+
 ## Setup
 
-Clone this repository to your $HOME / ~ directory.
+After bootstrap, the repository should already exist at `~/.dotfiles`, the core home files should be installed, and the Go CLI should be runnable.
+
+To re-run the installer manually:
+
+```bash
+cd "$HOME/.dotfiles"
+asdf exec go run .
+```
+
+The main flows are:
+
+- `1` Setup dependencies
+- `2` Install dotfiles
+- `3` Setup macOS defaults
 
 ```
- $ ln -sf "$HOME/.dotfiles/runcom/.zshrc" "$HOME/.zshrc"
- ```
+ $ asdf exec go run .
+```
 
 ## Documentation
 
