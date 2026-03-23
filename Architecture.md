@@ -8,13 +8,16 @@ This repository is a Go-based dotfiles and machine bootstrap project. It combine
 .dotfiles/
 ├── dotfiles.go                  # CLI entrypoint and top-level menu
 ├── dotfiles_test.go             # tests for main menu dispatch
+├── .githooks/                   # repo-managed git hooks for local safety checks
+├── .github/workflows/           # CI workflows, including secret scanning
 ├── install/
 │   ├── bootstrap_macos.sh       # blank-slate macOS bootstrap before the repo is cloned
+│   ├── setup_git_hooks.sh       # enables repo-managed hooks via core.hooksPath
 │   ├── setup_dev_dependencies.go
 │   ├── setup_dotfiles.go
 │   ├── setup_machine.go
 │   ├── application_settings/    # command builders for macOS/Chrome/Dock settings
-│   └── dependencies/            # installers for Homebrew, zsh, git, gh, asdf
+│   └── dependencies/            # installers for Homebrew, zsh, git, gh, asdf, gitleaks
 ├── runcom/                      # shell startup files symlinked into $HOME
 ├── git/                         # git config files symlinked into $HOME
 ├── system/                      # shell helper fragments and prompts
@@ -44,18 +47,23 @@ flowchart TD
 - `install`
   - Coordinates the main behaviors:
     - blank-slate macOS bootstrap via `install/bootstrap_macos.sh`
+    - local hook setup via `install/setup_git_hooks.sh`
     - dependency installation
     - dotfile symlink creation
     - machine setup flows
   - Owns most user interaction and error reporting.
 
 - `install/dependencies`
-  - Contains installers/checkers for development tools such as Homebrew, zsh, git, GitHub CLI, and asdf.
+  - Contains installers/checkers for development tools such as Homebrew, zsh, git, GitHub CLI, asdf, and gitleaks.
   - Wraps shell execution behind mockable shims for unit tests.
 
 - `install/application_settings`
   - Builds macOS, Chrome, and Dock commands as plain Go data.
   - Keeps command definitions separate from execution.
+
+- `.githooks/`
+  - Stores repo-managed `pre-commit` and `pre-push` hooks.
+  - Runs local `gitleaks` scans before commits and pushes once `core.hooksPath` is enabled.
 
 - `runcom/`, `git/`, `system/`
   - Store the actual dotfiles and shell fragments managed by the repo.

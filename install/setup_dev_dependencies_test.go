@@ -9,7 +9,7 @@ import (
 
 func TestDependencies_All(t *testing.T) {
 	var called []string
-	options := []string{"Homebrew", "zsh", "git", "GitHub CLI", "asdf"}
+	options := []string{"Homebrew", "zsh", "git", "GitHub CLI", "asdf", "gitleaks"}
 	mockActions := make([]func(), len(options))
 	for i, name := range options {
 		name := name
@@ -28,7 +28,7 @@ func TestDependencies_All(t *testing.T) {
 
 func TestDependencies_SingleAndMultiple(t *testing.T) {
 	var called []string
-	options := []string{"Homebrew", "zsh", "git", "GitHub CLI", "asdf"}
+	options := []string{"Homebrew", "zsh", "git", "GitHub CLI", "asdf", "gitleaks"}
 	mockActions := make([]func(), len(options))
 	for i, name := range options {
 		name := name
@@ -43,6 +43,7 @@ func TestDependencies_SingleAndMultiple(t *testing.T) {
 		{"2\n", []string{"zsh"}},
 		{"1,3\n", []string{"Homebrew", "git"}},
 		{"3,5\n", []string{"git", "asdf"}},
+		{"6\n", []string{"gitleaks"}},
 	}
 
 	for _, tc := range cases {
@@ -65,7 +66,7 @@ func TestDependencies_SingleAndMultiple(t *testing.T) {
 
 func TestDependencies_InvalidInput(t *testing.T) {
 	var called []string
-	options := []string{"Homebrew", "zsh", "git", "GitHub CLI", "asdf"}
+	options := []string{"Homebrew", "zsh", "git", "GitHub CLI", "asdf", "gitleaks"}
 	mockActions := make([]func(), len(options))
 	for i, name := range options {
 		name := name
@@ -96,6 +97,7 @@ func DependenciesWithMocks(input *bytes.Buffer, output *bytes.Buffer, actions []
 		{"git", actions[2]},
 		{"GitHub CLI", actions[3]},
 		{"asdf", actions[4]},
+		{"gitleaks", actions[5]},
 	}
 
 	output.WriteString("Select which dependencies to install:\n")

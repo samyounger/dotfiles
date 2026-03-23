@@ -22,6 +22,17 @@ The bootstrap flow will pause for the manual `1Password` step so you can sign in
 
 After bootstrap, the repository should already exist at `~/.dotfiles`, the core home files should be installed, and the Go CLI should be runnable.
 
+For contributors to this repository, install `gitleaks` through the Go CLI dependency menu, then enable the repo-managed Git hooks:
+
+```bash
+cd "$HOME/.dotfiles"
+asdf exec go run .
+# choose 6) gitleaks, or 0) All
+./install/setup_git_hooks.sh
+```
+
+This repository uses `gitleaks` for free local and CI secrets scanning. The local hooks run on both commit and push, and GitHub Actions runs the same category of scan on pull requests and pushes using the pinned `gitleaks` CLI in Docker. To make the GitHub Action a true merge blocker, mark `Secret Scan / gitleaks` as a required status check in branch protection.
+
 To re-run the installer manually:
 
 ```bash

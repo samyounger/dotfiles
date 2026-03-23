@@ -13,6 +13,7 @@ Follow this order when making changes:
 5. Re-run the focused tests for the touched package until they pass.
 6. Run the full repository checks.
 7. Run existing lint commands, if the repository defines them.
+8. Run the secrets scan before every commit.
 
 In short: **tests first, implementation second, verification last**.
 
@@ -43,6 +44,24 @@ go test ./...
 
 If the repository later adds a lint target, run it after tests pass. Use the lint command that already exists in the repository rather than inventing a new tool or config.
 
+Before each commit, run:
+
+```bash
+gitleaks git --no-banner --redact .
+```
+
+Install `gitleaks` through this repo's Go CLI dependency menu first, then enable the repo-managed Git hooks:
+
+```bash
+asdf exec go run .
+# choose 6) gitleaks, or 0) All
+./install/setup_git_hooks.sh
+```
+
+Once enabled, `pre-commit` and `pre-push` both run the same `gitleaks` scan automatically. The `pre-push` hook is the last local gate before code leaves your machine.
+
+The GitHub workflow uses the pinned `gitleaks` CLI directly, so the merge gate stays free and aligned with the repository's local tool version.
+
 ## Implementation guidance
 
 - Keep changes surgical and match existing package boundaries.
@@ -67,11 +86,11 @@ Before considering a task complete:
 1. Ensure the relevant unit tests exist and pass.
 2. Run `go test ./...`.
 3. Run any existing lint command if one is available.
-4. Check whether `README.md`, `Architecture.md`, or package-level docs should be updated.
-5. Avoid reverting unrelated user changes in the worktree.
+4. Run `gitleaks git --no-banner --redact .`.
+5. Check whether `README.md`, `Architecture.md`, or package-level docs should be updated.
+6. Avoid reverting unrelated user changes in the worktree.
 
 ## Documentation to keep in sync
 
 - `Architecture.md` explains package layout, runtime flow, and coding conventions.
 - `README.md` is the short onboarding document for the repo.
-

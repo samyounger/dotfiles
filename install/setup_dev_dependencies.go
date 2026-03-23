@@ -9,7 +9,7 @@ import (
 	"github.com/samyounger/dotfiles/install/dependencies"
 )
 
-// Dependencies interactively installs Homebrew, zsh, git, GitHub CLI, and asdf
+// Dependencies interactively installs Homebrew, zsh, git, GitHub CLI, asdf, and gitleaks
 func Dependencies(input io.Reader, output io.Writer) {
 	options := []struct {
 		name   string
@@ -20,6 +20,7 @@ func Dependencies(input io.Reader, output io.Writer) {
 		{"git", dependencies.InstallGit},
 		{"GitHub CLI", dependencies.InstallGithubCLI},
 		{"asdf", dependencies.InstallAsdf},
+		{"gitleaks", dependencies.InstallGitleaks},
 	}
 
 	fmt.Fprintln(output, "Select which dependencies to install:")
@@ -62,7 +63,7 @@ func Dependencies(input io.Reader, output io.Writer) {
 
 func parseChoice(s string, max int) (int, error) {
 	switch s {
-	case "1", "2", "3", "4", "5":
+	case "1", "2", "3", "4", "5", "6":
 		idx := int(s[0] - '1')
 		if idx >= 0 && idx < max {
 			return idx, nil
