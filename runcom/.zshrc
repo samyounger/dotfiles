@@ -72,6 +72,10 @@ plugins=(git asdf dotenv)
 
 source $ZSH/oh-my-zsh.sh
 
+# 1Password auto-generated .env file
+# The path needs to be set in the 1Password / Developer environments section
+# and mount it with the path selected.
+source "$HOME"/.config/1Password/.zshenv.local
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
