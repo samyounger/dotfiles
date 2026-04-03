@@ -16,5 +16,8 @@ export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/
 # Path to Github MCP
 export COPILOT_MCP_CONFIG="$HOME/.config/copilot/mcp.json"
 
+# Path to aws cli config
+export AWS_CONFIG_FILE="$HOME/.config/aws/config"
+
 # GPG key
 export GPG_TTY=$(tty)
