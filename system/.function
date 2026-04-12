@@ -2,41 +2,39 @@ doc() {
   docker-compose run web $@
 }
 
-pi() {
-  if [ -z "${PIHOLE_SSH_USER:-}" ]; then
-    echo "Error: PIHOLE_SSH_USER is not set" >&2
-    return 1
-  fi
-  if [ -z "${PIHOLE_SSH_IP:-}" ]; then
-    echo "Error: PIHOLE_SSH_IP is not set" >&2
+connect_ssh_with_env() {
+  local user_env_var="$1"
+  local host_env_var="$2"
+  local user_value host_value
+
+  if [ -z "$user_env_var" ] || [ -z "$host_env_var" ]; then
+    echo "Error: connect_ssh_with_env requires user and host env var names" >&2
     return 1
   fi
 
-  ssh "${PIHOLE_SSH_USER}@${PIHOLE_SSH_IP}"
+  user_value="${(P)user_env_var}"
+  host_value="${(P)host_env_var}"
+
+  if [ -z "${user_value:-}" ]; then
+    echo "Error: ${user_env_var} is not set" >&2
+    return 1
+  fi
+  if [ -z "${host_value:-}" ]; then
+    echo "Error: ${host_env_var} is not set" >&2
+    return 1
+  fi
+
+  ssh "${user_value}@${host_value}"
+}
+
+pi() {
+  connect_ssh_with_env "PIHOLE_SSH_USER" "PIHOLE_SSH_IP"
 }
 
 hs-m() {
-  if [ -z "${HOMESERVER_SSH_USER:-}" ]; then
-    echo "Error: HOMESERVER_SSH_USER is not set" >&2
-    return 1
-  fi
-  if [ -z "${HOMESERVER_MONITORING_SSH_IP:-}" ]; then
-    echo "Error: HOMESERVER_MONITORING_SSH_IP is not set" >&2
-    return 1
-  fi
-
-  ssh "${HOMESERVER_SSH_USER}@${HOMESERVER_MONITORING_SSH_IP}"
+  connect_ssh_with_env "HOMESERVER_SSH_USER" "HOMESERVER_MONITORING_SSH_IP"
 }
 
 hs-oc() {
-  if [ -z "${HOMESERVER_SSH_USER:-}" ]; then
-    echo "Error: HOMESERVER_SSH_USER is not set" >&2
-    return 1
-  fi
-  if [ -z "${HOMESERVER_OPENCLAW_SSH_IP:-}" ]; then
-    echo "Error: HOMESERVER_OPENCLAW_SSH_IP is not set" >&2
-    return 1
-  fi
-
-  ssh "${HOMESERVER_SSH_USER}@${HOMESERVER_OPENCLAW_SSH_IP}"
+  connect_ssh_with_env "HOMESERVER_SSH_USER" "HOMESERVER_OPENCLAW_SSH_IP"
 }
