@@ -18,6 +18,7 @@ export COPILOT_MCP_CONFIG="$HOME/.config/copilot/mcp.json"
 
 # Path to aws cli config
 export AWS_CONFIG_FILE="$HOME/.config/aws/config"
+export AWS_PROFILE="engineering"
 
 # GPG key
 export GPG_TTY=$(tty)

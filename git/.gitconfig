@@ -1,11 +1,12 @@
 [user]
   name = Sam Younger
   email = samyounger@fastmail.com
-  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAlHTOWv6dTS5TKBjYtxnzL/qU14qjk7fQE6Q/R3JrQ
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDB0DvfQlO8tSgc5v7i+Kn3293bHYnhWQfN1LHMxIJ0W
 [gpg]
   format = ssh
 [gpg "ssh"]
   program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+  allowedSignersFile = /Users/samyounger/.ssh/allowed_signers
 [commit]
   gpgsign = true
 [core]
