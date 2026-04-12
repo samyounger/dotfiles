@@ -14,3 +14,29 @@ pi() {
 
   ssh "${PIHOLE_SSH_USER}@${PIHOLE_SSH_IP}"
 }
+
+hs-m() {
+  if [ -z "${HOMESERVER_SSH_USER:-}" ]; then
+    echo "Error: HOMESERVER_SSH_USER is not set" >&2
+    return 1
+  fi
+  if [ -z "${HOMESERVER_MONITORING_SSH_IP:-}" ]; then
+    echo "Error: HOMESERVER_MONITORING_SSH_IP is not set" >&2
+    return 1
+  fi
+
+  ssh "${HOMESERVER_SSH_USER}@${HOMESERVER_MONITORING_SSH_IP}"
+}
+
+hs-oc() {
+  if [ -z "${HOMESERVER_SSH_USER:-}" ]; then
+    echo "Error: HOMESERVER_SSH_USER is not set" >&2
+    return 1
+  fi
+  if [ -z "${HOMESERVER_OPENCLAW_SSH_IP:-}" ]; then
+    echo "Error: HOMESERVER_OPENCLAW_SSH_IP is not set" >&2
+    return 1
+  fi
+
+  ssh "${HOMESERVER_SSH_USER}@${HOMESERVER_OPENCLAW_SSH_IP}"
+}
